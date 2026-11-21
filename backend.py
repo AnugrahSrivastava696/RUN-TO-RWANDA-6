@@ -6,6 +6,11 @@ import os
 import sys
 import threading
 import webbrowser
+import json
+import hashlib
+import re
+import subprocess
+import urllib.request
 
 from flask import (
     Flask, request, redirect,
@@ -20,12 +25,18 @@ from werkzeug.security import (
 # RUN TO RWANDA 6 - BACKEND
 # ==================================
 
+GITHUB_RELEASE_API = (
+    "https://api.github.com/repos/"
+    "AnugrahSrivastava696/RUN-TO-RWANDA-6/releases/latest"
+)
+
+EXE_NAME = "RUN_TO_RWANDA_6.exe"
+
 # ==================================
 # APPLICATION FILE LOCATIONS
 # ==================================
 
 if getattr(sys, "frozen", False):
-    # Running as a packaged EXE
     RESOURCE_DIR = Path(sys._MEIPASS)
 
     DATA_DIR = (
@@ -33,23 +44,153 @@ if getattr(sys, "frozen", False):
         / "RUN TO RWANDA 6"
     )
 else:
-    # Running normally with Python
     RESOURCE_DIR = Path(__file__).resolve().parent
     DATA_DIR = RESOURCE_DIR
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 DATABASE = DATA_DIR / "accounts.db"
+VERSION_FILE = DATA_DIR / "version.txt"
 
 app = Flask(__name__, static_folder=None)
 
-# Generate and preserve a secret key locally.
 SECRET_FILE = DATA_DIR / ".secret_key"
 
 if not SECRET_FILE.exists():
     SECRET_FILE.write_text(secrets.token_hex(32))
 
 app.secret_key = SECRET_FILE.read_text().strip()
+
+
+# ==================================
+# GITHUB AUTO-UPDATER
+# ==================================
+
+def check_for_updates():
+
+    # Only update packaged Windows EXEs.
+    if not getattr(sys, "frozen", False):
+        return
+
+    if os.name != "nt":
+        return
+
+    try:
+        req = urllib.request.Request(
+            GITHUB_RELEASE_API,
+            headers={"User-Agent": "RUN-TO-RWANDA-6"}
+        )
+
+        with urllib.request.urlopen(req, timeout=15) as response:
+            release = json.loads(response.read().decode("utf-8"))
+
+        latest_version = release.get("tag_name", "")
+
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", latest_version):
+            return
+
+        assets = [
+            asset for asset in release.get("assets", [])
+            if asset.get("name") == EXE_NAME
+        ]
+
+        if not assets:
+            print("No EXE found in GitHub Release.")
+            return
+
+        asset = assets[0]
+
+        # First launch: the currently installed EXE is the
+        # version uploaded in the initial release.
+
+        # The original installed game is version v.0.0.1.
+        # Keep track of its version even on the first launch.
+        current_version = (
+            VERSION_FILE.read_text().strip()
+            if VERSION_FILE.exists()
+            else "v.0.0.1"
+        )
+
+
+        if current_version == latest_version:
+            return
+
+        print("A new RUN TO RWANDA 6 update is available!")
+
+        game_path = Path(sys.executable).resolve()
+        download_path = game_path.with_name("game_update.exe")
+
+        download_request = urllib.request.Request(
+            asset["browser_download_url"],
+            headers={"User-Agent": "RUN-TO-RWANDA-6"}
+        )
+
+        sha256 = hashlib.sha256()
+
+        with urllib.request.urlopen(
+            download_request, timeout=120
+        ) as response:
+            with open(download_path, "wb") as output:
+                while True:
+                    chunk = response.read(1024 * 1024)
+                    if not chunk:
+                        break
+
+                    output.write(chunk)
+                    sha256.update(chunk)
+
+        # Verify the download when GitHub provides a SHA-256 digest.
+        expected_digest = asset.get("digest")
+
+        if expected_digest and expected_digest.startswith("sha256:"):
+            if sha256.hexdigest() != expected_digest[7:]:
+                download_path.unlink(missing_ok=True)
+                print("Update verification failed.")
+                return
+
+        print("Update downloaded. Restarting with the new version...")
+
+        batch_path = DATA_DIR / "replace_game.bat"
+
+        pid = os.getpid()
+
+        batch_code = f"""@echo off
+:wait
+tasklist /FI "PID eq {pid}" /FO CSV /NH | findstr /C:""" + f'''"{pid}"''' + f""" >nul
+if not errorlevel 1 (
+    timeout /t 1 /nobreak >nul
+    goto wait
+)
+
+copy /Y "{download_path}" "{game_path}" >nul
+
+if errorlevel 1 goto failed
+
+del "{download_path}"
+> "{VERSION_FILE}" echo {latest_version}
+start "" "{game_path}"
+del "%~f0"
+exit /b
+
+:failed
+del "{download_path}"
+start "" "{game_path}"
+del "%~f0"
+"""
+
+        batch_path.write_text(batch_code, encoding="utf-8")
+
+        subprocess.Popen(
+            ["cmd.exe", "/c", str(batch_path)],
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
+
+        sys.exit(0)
+
+    except Exception as error:
+        print("Update check failed:", error)
+        print("Starting the existing game instead.")
+
 
 # ==================================
 # DATABASE
@@ -117,7 +258,6 @@ def signup():
     if len(password) < 8:
         return "Password must be at least 8 characters.", 400
 
-    # Hash the password before storing it.
     password_hash = generate_password_hash(password)
 
     try:
@@ -163,7 +303,6 @@ def login():
     ):
         return "Incorrect username or password.", 401
 
-    # Login successful!
     session.clear()
     session["user_id"] = user["id"]
     session["username"] = user["username"]
@@ -183,20 +322,21 @@ def dashboard():
     return send_from_directory(RESOURCE_DIR, "welcomepage.html")
 
 
-
 # ==================================
 # LOGOUT
 # ==================================
 
 @app.route("/logout")
 def logout():
-
     session.clear()
-
     return redirect("/login.html")
+
+
 @app.route("/gta6.mp4")
 def background_video():
     return send_from_directory(RESOURCE_DIR, "gta6.mp4")
+
+
 @app.route("/videoend.png")
 def ending_image():
     return send_from_directory(RESOURCE_DIR, "videoend.png")
@@ -208,11 +348,12 @@ def ending_image():
 
 if __name__ == "__main__":
 
+    check_for_updates()
+
     initialize_database()
 
     print("RUN TO RWANDA 6 BACKEND STARTED!")
 
-    # Open the application automatically
     threading.Timer(
         1.5,
         lambda: webbrowser.open("http://127.0.0.1:5000")

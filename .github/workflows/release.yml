@@ -1,0 +1,38 @@
+
+name: Build and Publish RUN TO RWANDA 6
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Download source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flask pyinstaller
+
+      - name: Build EXE
+        run: pyinstaller --clean RUN_TO_RWANDA_6.spec
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v1.0.${{ github.run_number }}"
+          gh release create $tag dist/RUN_TO_RWANDA_6.exe --title "RUN TO RWANDA 6 $tag" --notes "Automatic game update."
