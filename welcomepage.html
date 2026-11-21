@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Background Video with Sound</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #000000;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* Start screen */
+    #start-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 20px;
+      background: #00000000;
+      z-index: 10;
+      color: white;
+    }
+
+    #start-button {
+      padding: 15px 45px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      background: #2868d3;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family:'Times New Roman', Times, serif;
+    }
+
+    #start-button:hover {
+      background: #4385f0;
+    }
+
+    /* Background video */
+    #bg-video {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 1;
+      display: none;
+      pointer-events: none;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      color: white;
+      text-align: center;
+      padding-top: 40vh;
+      display: none;
+    }
+    #ending-image {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    display: none;
+    z-index: 1;
+}
+  </style>
+</head>
+
+<body>
+
+  <!-- Start screen -->
+  <div id="start-screen">
+    <button id="start-button">Start</button>
+  </div>
+
+  <!-- Background video -->
+<video id="bg-video" playsinline preload="auto"
+       disablePictureInPicture>
+    <source src="/gta6.mp4" type="video/mp4">
+</video>
+<img id="ending-image" src="/videoend.png" alt="Info">
+
+  <div class="content">
+  </div>
+
+  <script>
+    const video = document.getElementById('bg-video');
+    video.addEventListener('error', () => {
+    console.error("VIDEO ERROR:", video.error);
+});
+video.addEventListener("ended", () => {
+    video.style.display = "none";
+
+    document.getElementById("ending-image").style.display = "block";
+});
+    const startButton = document.getElementById('start-button');
+    const startScreen = document.getElementById('start-screen');
+    const content = document.querySelector('.content');
+
+    startButton.addEventListener('click', async () => {
+
+      // Hide start screen
+      startScreen.style.display = 'none';
+
+      // Show video
+      video.style.display = 'block';
+
+      // Show content
+      content.style.display = 'block';
+
+      // Enable audio and start playback
+      video.muted = false;
+
+      try {
+        await video.play();
+      } catch (error) {
+        console.error("Video playback failed:", error);
+      }
+
+    }, { once: true });
+
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+
+accounts.db
+.secret_key
+__pycache__/
+build/
+dist/
+*.spec
