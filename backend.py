@@ -46,7 +46,12 @@ if getattr(sys, "frozen", False):
 else:
     RESOURCE_DIR = Path(__file__).resolve().parent
     DATA_DIR = RESOURCE_DIR
+BUILD_VERSION_FILE = RESOURCE_DIR / "build_version.txt"
 
+try:
+    BUILD_VERSION = BUILD_VERSION_FILE.read_text().strip()
+except FileNotFoundError:
+    BUILD_VERSION = "unknown"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 DATABASE = DATA_DIR / "accounts.db"
@@ -95,27 +100,16 @@ def check_for_updates():
         ]
 
         if not assets:
-            print("No EXE found in GitHub Release.")
             return
 
         asset = assets[0]
 
-        # First launch: the currently installed EXE is the
-        # version uploaded in the initial release.
-
-        # The original installed game is version v.0.0.1.
-        # Keep track of its version even on the first launch.
-        # First launch: record the currently available version.
-        if not VERSION_FILE.exists():
-            VERSION_FILE.write_text(latest_version)
-            return
-
-        current_version = VERSION_FILE.read_text().strip()
+        # Record the latest version on first launch.
+# Record the version of the EXE currently running.
+        current_version = BUILD_VERSION
 
         if current_version == latest_version:
             return
-
-        print("A new RUN TO RWANDA 6 update is available!")
 
         game_path = Path(sys.executable).resolve()
         download_path = game_path.with_name("game_update.exe")
@@ -145,10 +139,7 @@ def check_for_updates():
         if expected_digest and expected_digest.startswith("sha256:"):
             if sha256.hexdigest() != expected_digest[7:]:
                 download_path.unlink(missing_ok=True)
-                print("Update verification failed.")
                 return
-
-        print("Update downloaded. Restarting with the new version...")
 
         batch_path = DATA_DIR / "replace_game.bat"
 
@@ -187,10 +178,8 @@ del "%~f0"
 
         sys.exit(0)
 
-    except Exception as error:
-        print("Update check failed:", error)
-        print("Starting the existing game instead.")
-
+    except Exception:
+        pass
 
 # ==================================
 # DATABASE

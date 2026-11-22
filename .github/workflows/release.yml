@@ -27,6 +27,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install flask pyinstaller
 
+      - name: Set build version
+        shell: pwsh
+        run: |
+          $tag = "v1.0.${{ github.run_number }}"
+          Set-Content -Path build_version.txt -Value $tag -NoNewline -Encoding ascii
+
       - name: Build EXE
         run: pyinstaller --clean RUN_TO_RWANDA_6.spec
 
