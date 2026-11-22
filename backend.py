@@ -105,12 +105,12 @@ def check_for_updates():
 
         # The original installed game is version v.0.0.1.
         # Keep track of its version even on the first launch.
-if not VERSION_FILE.exists():
-    VERSION_FILE.write_text(latest_version)
-    return
+        # First launch: record the currently available version.
+        if not VERSION_FILE.exists():
+            VERSION_FILE.write_text(latest_version)
+            return
 
-current_version = VERSION_FILE.read_text().strip()
-
+        current_version = VERSION_FILE.read_text().strip()
 
         if current_version == latest_version:
             return
