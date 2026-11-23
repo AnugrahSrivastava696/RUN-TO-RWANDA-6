@@ -32,6 +32,7 @@ exe = EXE(
     a.datas,
     [],
     name='RUN_TO_RWANDA_6',
+    icon='favicon.ico',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
