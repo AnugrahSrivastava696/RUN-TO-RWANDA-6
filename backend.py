@@ -141,29 +141,39 @@ def check_for_updates():
                 download_path.unlink(missing_ok=True)
                 return
 
+
         batch_path = DATA_DIR / "replace_game.bat"
+        log_path = DATA_DIR / "update_log.txt"
 
         pid = os.getpid()
 
         batch_code = f"""@echo off
+echo Update started > "{log_path}"
+
 :wait
-tasklist /FI "PID eq {pid}" /FO CSV /NH | findstr /C:""" + f'''"{pid}"''' + f""" >nul
+tasklist /FI "PID eq {pid}" /FO CSV /NH | findstr /C:"{pid}" >nul
 if not errorlevel 1 (
     timeout /t 1 /nobreak >nul
     goto wait
 )
 
-copy /Y "{download_path}" "{game_path}" >nul
+echo Old process closed >> "{log_path}"
+
+copy /Y "{download_path}" "{game_path}" >> "{log_path}" 2>&1
 
 if errorlevel 1 goto failed
 
+echo Replacement successful >> "{log_path}"
+
 del "{download_path}"
 > "{VERSION_FILE}" echo {latest_version}
+
 start "" "{game_path}"
 del "%~f0"
 exit /b
 
 :failed
+echo Replacement FAILED >> "{log_path}"
 del "{download_path}"
 start "" "{game_path}"
 del "%~f0"
