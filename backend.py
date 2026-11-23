@@ -159,11 +159,28 @@ if not errorlevel 1 (
 
 echo Old process closed >> "{log_path}"
 
+
+timeout /t 2 /nobreak >nul
+
+set attempt=0
+
+:copy_retry
+set /a attempt+=1
+
 copy /Y "{download_path}" "{game_path}" >> "{log_path}" 2>&1
 
-if errorlevel 1 goto failed
+if not errorlevel 1 goto copied
 
+echo Copy attempt %attempt% failed >> "{log_path}"
+
+if %attempt% geq 15 goto failed
+
+timeout /t 1 /nobreak >nul
+goto copy_retry
+
+:copied
 echo Replacement successful >> "{log_path}"
+
 
 del "{download_path}"
 > "{VERSION_FILE}" echo {latest_version}
