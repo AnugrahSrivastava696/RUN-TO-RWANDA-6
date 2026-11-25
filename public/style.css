@@ -1,0 +1,137 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: linear-gradient(
+    to bottom,
+    #061638 0%,
+    #102f70 48%,
+    #2868d3 100%
+  );
+  color: #ffffff;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.site-title {
+  position: absolute;
+  top: 25px;
+  left: 30px;
+  color: #ffffff;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.login-panel {
+  width: min(420px, calc(100% - 40px));
+  margin: 0 auto;
+  padding-top: max(150px, 22vh);
+  text-align: center;
+}
+
+.login-panel h1 {
+  margin: 0 0 28px;
+  color: #ffffff;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.login-panel form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 17px;
+}
+
+.login-panel form input {
+  display: block;
+  width: 100%;
+  height: 49px;
+  padding: 0 14px;
+  border: 1px solid #d6d6d6;
+  border-radius: 2px;
+  outline: none;
+  background: #ffffff;
+  color: #111111;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+}
+
+.login-panel form input::placeholder {
+  color: #333333;
+  opacity: 1;
+}
+
+.login-panel form input:focus {
+  border-color: #9cc4ff;
+  box-shadow: 0 0 0 3px rgba(180, 210, 255, 0.25);
+}
+
+	.login-panel form button {
+  min-width: 145px;
+  margin-top: 7px;
+  padding: 12px 24px;
+  border: 1px solid #09245b;
+  border-radius: 7px;
+  background: linear-gradient(to bottom, #3479dc, #1850a9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 2px 4px rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.login-panel form button:hover {
+  filter: brightness(1.1);
+}
+
+.login-panel form button:active {
+  transform: translateY(1px);
+}
+
+.signup-link {
+  display: inline-block;
+  margin-top: 23px;
+  color: #ffffff;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 18px;
+  text-decoration: none;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}
+
+.status-message {
+  min-height: 20px;
+  margin: 14px 0 0;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+}
+
+@media (max-width: 520px) {
+  .site-title {
+    top: 18px;
+    left: 18px;
+    font-size: 19px;
+  }
+
+  .login-panel {
+    padding-top: 145px;
+  }
+}

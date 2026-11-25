@@ -6,3 +6,6 @@ build/
 dist/
 *.spec
 .env
+venv/
+.venv/
+*.db
