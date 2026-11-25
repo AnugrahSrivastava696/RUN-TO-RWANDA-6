@@ -11,12 +11,19 @@ from dotenv import load_dotenv
 # RUN TO RWANDA 6 - ONLINE BACKEND
 load_dotenv()
 app = Flask(__name__)
+from werkzeug.routing import BaseConverter
+
+class ProductKeyConverter(BaseConverter):
+    regex = r"[A-Za-z0-9]{5}(?:-[A-Za-z0-9]{5}){2}"
+
+app.url_map.converters["key"] = ProductKeyConverter
 app.secret_key = os.environ["SECRET_KEY"]
 
 app.config.update(
     SESSION_COOKIE_SECURE=os.environ.get("VERCEL") == "1",
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax"
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_PATH="/run-to-rwanda-6",
 )
 
 ROOT = Path(__file__).resolve().parent
@@ -46,7 +53,7 @@ def valid_key(key):
 
 # QR CODE AUTHENTICATION
 
-@app.route("/run-to-rwanda-6/<product_key>")
+@app.route("/run-to-rwanda-6/<key:product_key>")
 def authenticate_key(product_key):
     product_key = product_key.upper()
 
@@ -56,12 +63,12 @@ def authenticate_key(product_key):
     session.clear()
     session["product_key"] = product_key
 
-    return redirect("/login.html")
+    return redirect("/run-to-rwanda-6/login.html")
 
 
 # SIGNUP
 
-@app.route("/signup", methods=["POST"])
+@app.route("/run-to-rwanda-6/signup", methods=["POST"])
 def signup():
     key = session.get("product_key")
 
@@ -90,12 +97,12 @@ def signup():
     except Exception:
         return "That username may already be taken. Please try another.", 409
 
-    return redirect("/login.html?signup=success")
+    return redirect("/run-to-rwanda-6/login.html?signup=success")
 
 
 # LOGIN
 
-@app.route("/login", methods=["POST"])
+@app.route("/run-to-rwanda-6/login", methods=["POST"])
 def login():
     key = session.get("product_key")
 
@@ -128,7 +135,7 @@ def login():
         session["user_id"] = user["id"]
         session["username"] = user["username"]
 
-        return redirect("/dashboard")
+        return redirect("/run-to-rwanda-6/dashboard")
 
     except Exception:
         return "Login service temporarily unavailable.", 500
@@ -136,12 +143,12 @@ def login():
 
 # GAME PAGE
 
-@app.route("/dashboard")
+@app.route("/run-to-rwanda-6/dashboard")
 def dashboard():
     key = session.get("product_key")
 
     if not session.get("user_id") or not key:
-        return redirect("/")
+        return redirect("/run-to-rwanda-6/")
 
     if not valid_key(key):
         session.clear()
@@ -152,24 +159,25 @@ def dashboard():
 
 # LOGOUT
 
-@app.route("/logout")
+@app.route("/run-to-rwanda-6/logout")
 def logout():
     session.clear()
-    return redirect("/")
+    return redirect("/run-to-rwanda-6/")
 
 
 @app.route("/")
+@app.route("/run-to-rwanda-6/")
 def home():
     return "RUN TO RWANDA 6 - Please scan your product QR code to continue."
-@app.route("/login.html")
+@app.route("/run-to-rwanda-6/login.html")
 def login_page():
     return send_from_directory(ROOT / "public", "login.html")
-@app.route("/signup.html")
+@app.route("/run-to-rwanda-6/signup.html")
 def signup_page():
     return send_from_directory(ROOT / "public", "signup.html")
 
 
-@app.route("/<path:filename>")
+@app.route("/run-to-rwanda-6/<path:filename>")
 def public_files(filename):
     return send_from_directory(ROOT / "public", filename)
 if __name__ == "__main__":
